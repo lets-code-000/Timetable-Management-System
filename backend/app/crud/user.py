@@ -10,7 +10,7 @@ def get_user_by_username(db: Session, username: str):
     result = db.exec(statement).first()
     return result
 
-def create_user(db: Session, user: UserCreate, role_id: int | None = None):
+def create_user(db: Session, user: UserCreate, role_id: int | None = None, college_id: int | None = None):
     # Argon2 doesn't have the 72-byte limitation, so we can hash the full password
     hashed_password = pwd_context.hash(user.password)
     db_user = User(
@@ -18,7 +18,8 @@ def create_user(db: Session, user: UserCreate, role_id: int | None = None):
         email=user.email,
         phone_number=user.phone_number,
         hashed_password=hashed_password,
-        role_id=role_id
+        role_id=role_id,
+        college_id=college_id
     )
     db.add(db_user)
     db.commit()

@@ -18,6 +18,7 @@ def create_department(dept: DepartmentCreate, db: Session = Depends(get_db),curr
         raise HTTPException(status_code=400, detail="Department with this name and year already exists")
     
     db_dept = Department.model_validate(dept)
+    db_dept.college_id = current_user.college_id
     db.add(db_dept)
     db.commit()
     db.refresh(db_dept)
@@ -25,7 +26,7 @@ def create_department(dept: DepartmentCreate, db: Session = Depends(get_db),curr
 
 @router.get("/", response_model=List[DepartmentRead])
 def get_departments(db: Session = Depends(get_db),current_user = Depends(get_current_user)):
-    departments = db.exec(select(Department)).all()
+    departments = db.exec(select(Department).where(Department.college_id == current_user.college_id)).all()
     return departments
 
 @router.get("/{department_id}", response_model=DepartmentRead)

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.database import create_db_and_tables
+from app.routers import college
 from app.routers import  department
 from app.routers import  classroom
 from app.routers import  faculty
@@ -30,6 +31,7 @@ def on_startup():
 
 # Register routers
 app.include_router(auth.router, prefix="/auth", tags=["User"])
+app.include_router(college.router, prefix="/college", tags=["College"])
 app.include_router(department.router, prefix="/department", tags=["Department"])
 app.include_router(classroom.router, prefix="/classroom", tags=["classroom"])
 app.include_router(faculty.router, prefix="/faculty", tags=["Faculty"])

@@ -3,11 +3,12 @@
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import type { Snippet } from 'svelte';
 
-	import { BookOpenText,Hotel,UserRoundPen,GraduationCap,BookMarked,CalendarDays,LogOut } from 'lucide-svelte';
+	import { BookOpenText,Hotel,UserRoundPen,GraduationCap,BookMarked,CalendarDays,LogOut,Building2 } from 'lucide-svelte';
 
 	let { children }: { children?: Snippet } = $props();
 
 	const menuItems = [
+		{ name: 'College', path: '/college', icon: Building2 },
 		{ name: 'Classroom', path: '../classroom', icon: BookOpenText },
 		{ name: 'Departments', path: '../department', icon: Hotel },
 		{ name: 'Users', path: '/user', icon: UserRoundPen },

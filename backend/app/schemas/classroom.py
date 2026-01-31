@@ -22,6 +22,7 @@ class ClassroomRead(SQLModel):
     building_name: str
     room_no: str
     capacity: int
+    college_id: Optional[int] = None
     department: Optional[DepartmentRead] = None
 
     class Config:

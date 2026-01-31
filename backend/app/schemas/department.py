@@ -16,6 +16,7 @@ class DepartmentRead(SQLModel):
     id: int
     name: str
     year: int
+    college_id: Optional[int] = None
 
     class Config:
         from_attributes = True

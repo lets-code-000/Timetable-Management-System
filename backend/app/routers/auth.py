@@ -21,15 +21,7 @@ def register(user: UserCreate, session: Session = Depends(get_db)):
     if get_user_by_email(session, user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    role = get_role_by_id(session, db_user.role_id) if db_user and db_user.role_id else None
-    # if not role:
-    #     raise HTTPException(status_code=400, detail="Role not present")
-        
-
-    # return create_user(session, user, role_id=role.id)
-    role_id = None
-
-    return create_user(session, user, role_id=role_id)
+    return create_user(session, user, role_id=None, college_id=user.college_id)
 
     
 

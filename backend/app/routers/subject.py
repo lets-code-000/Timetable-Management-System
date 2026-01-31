@@ -18,6 +18,7 @@ def create_subject(subject: SubjectCreate, db: Session = Depends(get_db), curren
     if not db.get(Department, subject.department_id):
         raise HTTPException(status_code=404, detail="Department not found")
     db_subject = Subject.model_validate(subject)
+    db_subject.college_id = current_user.college_id
     db.add(db_subject)
     db.commit()
     db.refresh(db_subject)
@@ -25,7 +26,7 @@ def create_subject(subject: SubjectCreate, db: Session = Depends(get_db), curren
 
 @router.get("/", response_model=List[SubjectRead])
 def get_subjects(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    return db.exec(select(Subject)).all()
+    return db.exec(select(Subject).where(Subject.college_id == current_user.college_id)).all()
 
 @router.get("/{subject_id}", response_model=SubjectRead)
 def get_subject_by_id(subject_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):

@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel
 
+
 class DashboardReadStats(SQLModel):
     total_subjects: int
     total_faculties: int
