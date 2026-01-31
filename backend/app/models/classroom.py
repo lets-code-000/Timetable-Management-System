@@ -12,4 +12,7 @@ class Classroom(SQLModel, table=True):
 
     # department: Department|None = Relationship()
     department_id: int = Field(foreign_key="department.id")
+    college_id: Optional[int] = Field(default=None, foreign_key="college.id")
+
     department: "Department" = Relationship(back_populates="classrooms")
+    college: "College" = Relationship(back_populates="classrooms")

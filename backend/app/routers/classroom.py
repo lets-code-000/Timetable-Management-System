@@ -17,6 +17,7 @@ def create_classroom(classroom: ClassroomCreate, session: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Department not found")
 
     db_classroom = Classroom.model_validate(classroom)
+    db_classroom.college_id = current_user.college_id
     session.add(db_classroom)
     session.commit()
     session.refresh(db_classroom)
@@ -24,7 +25,7 @@ def create_classroom(classroom: ClassroomCreate, session: Session = Depends(get_
 
 @router.get("/", response_model=list[ClassroomRead])
 def get_classrooms(session: Session = Depends(get_db),current_user = Depends(get_current_user)):
-    statement = select(Classroom)
+    statement = select(Classroom).where(Classroom.college_id == current_user.college_id)
     results = session.exec(statement).all()
     return results
 

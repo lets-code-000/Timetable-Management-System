@@ -1,8 +1,8 @@
 from typing import Optional
-from sqlmodel import SQLModel,Field,Relationship
+from sqlmodel import SQLModel, Field, Relationship
 
 
-class Role(SQLModel,table = True):
+class Role(SQLModel, table=True):
     __tablename__ = "roles"
 
     id: Optional[int] = Field(default=None, primary_key=True)

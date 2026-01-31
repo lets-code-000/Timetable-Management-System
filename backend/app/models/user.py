@@ -11,5 +11,8 @@ class User(SQLModel, table=True):
     phone_number: str | None = Field(default=None, index=True)
     hashed_password: str
 
-    role_id: int |None = Field(default=None, foreign_key="roles.id")
+    role_id: int | None = Field(default=None, foreign_key="roles.id")
+    college_id: int | None = Field(default=None, foreign_key="college.id")
+
     role: "Role" = Relationship(back_populates="users")
+    college: "College" = Relationship(back_populates="users")

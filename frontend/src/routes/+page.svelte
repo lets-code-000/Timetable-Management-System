@@ -13,8 +13,26 @@
   let regUsername = $state("");
   let regEmail = $state("");
   let regPassword = $state("");
+  let regCollegeId = $state("");
   let regError = $state("");
   let regSuccess = $state("");
+
+  // Colleges for registration dropdown
+  let colleges: { id: number; name: string }[] = $state([]);
+  let collegesLoaded = $state(false);
+
+  async function loadColleges() {
+    if (collegesLoaded) return;
+    try {
+      const res = await fetch("http://localhost:8000/college/public");
+      if (res.ok) {
+        colleges = await res.json();
+      }
+    } catch {
+      // Colleges will remain empty — user can still register without one
+    }
+    collegesLoaded = true;
+  }
 
   // --- Login Function ---
   async function loginUser() {
@@ -61,11 +79,14 @@
       return;
     }
 
-    const user = {
+    const user: Record<string, unknown> = {
       username: regUsername,
       email: regEmail,
       password: regPassword
     };
+    if (regCollegeId) {
+      user.college_id = Number(regCollegeId);
+    }
 
     try {
       const res = await fetch("http://localhost:8000/auth/register", {
@@ -93,6 +114,7 @@
       regUsername = "";
       regEmail = "";
       regPassword = "";
+      regCollegeId = "";
       showLogin = true; // automatically show login after successful registration
     } catch (err: unknown) {
       if (err instanceof Error) regError = err.message;
@@ -102,6 +124,9 @@
 
   function toggleForm() {
     showLogin = !showLogin;
+    if (!showLogin) {
+      loadColleges();
+    }
   }
 </script>
 
@@ -172,6 +197,15 @@
         bind:value={regPassword}
         class="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
       />
+      <select
+        bind:value={regCollegeId}
+        class="w-full p-3 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+      >
+        <option value="">Select College</option>
+        {#each colleges as college}
+          <option value={college.id}>{college.name}</option>
+        {/each}
+      </select>
       <button
         onclick={registerUser}
         class="w-full bg-green-500 text-white py-3 rounded hover:bg-green-600 transition-colors mb-2"

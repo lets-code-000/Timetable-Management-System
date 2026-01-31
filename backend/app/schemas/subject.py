@@ -19,6 +19,7 @@ class SubjectUpdate(SQLModel):
 class SubjectRead(SQLModel):
     id: int
     name: str
+    college_id: Optional[int] = None
     faculty: Optional[FacultyRead] = None
     department: Optional[DepartmentRead] = None
     

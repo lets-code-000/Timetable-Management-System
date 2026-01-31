@@ -15,6 +15,7 @@ def create_faculty(faculty: FacultyCreate, db: Session = Depends(get_db), curren
     if not db.get(Department, faculty.department_id):
         raise HTTPException(status_code=404, detail="Department not found")
     db_faculty = Faculty.model_validate(faculty)
+    db_faculty.college_id = current_user.college_id
     db.add(db_faculty)
     db.commit()
     db.refresh(db_faculty)
@@ -22,7 +23,7 @@ def create_faculty(faculty: FacultyCreate, db: Session = Depends(get_db), curren
 
 @router.get("/", response_model=List[FacultyRead])
 def get_faculties(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    return db.exec(select(Faculty)).all()
+    return db.exec(select(Faculty).where(Faculty.college_id == current_user.college_id)).all()
 
 @router.get("/{faculty_id}", response_model=FacultyRead)
 def get_faculty_by_id(faculty_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):

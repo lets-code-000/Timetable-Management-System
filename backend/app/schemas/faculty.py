@@ -16,6 +16,7 @@ class FacultyUpdate(SQLModel):
 class FacultyRead(SQLModel):
     id: int
     name: str
+    college_id: Optional[int] = None
     department: Optional[DepartmentRead] = None
 
     class Config:

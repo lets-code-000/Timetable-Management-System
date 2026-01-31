@@ -6,7 +6,7 @@ class RoleCreate(BaseModel):
 class RoleRead(BaseModel):
     id: int
     role_name: str
-    
+
     class Config:
         from_attributes = True
     
