@@ -140,7 +140,7 @@
 
       <p class="text-sm text-center text-gray-600 mt-2">
         Don't have an account?
-        <span class="text-blue-500 cursor-pointer hover:underline" onclick={toggleForm}>Register here</span>
+        <button type="button" class="text-blue-500 cursor-pointer hover:underline" onclick={toggleForm}>Register here</button>
       </p>
 
     {:else}
@@ -181,7 +181,7 @@
 
       <p class="text-sm text-center text-gray-600 mt-2">
         Already have an account?
-        <span class="text-blue-500 cursor-pointer hover:underline" onclick={toggleForm}>Login here</span>
+        <button type="button" class="text-blue-500 cursor-pointer hover:underline" onclick={toggleForm}>Login here</button>
       </p>
     {/if}
   </div>

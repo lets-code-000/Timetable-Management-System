@@ -1,12 +1,16 @@
-import type { LayoutServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
+import { loadFlash } from 'sveltekit-flash-message/server';
 
-export const load: LayoutServerLoad = async ({ cookies, url }) => {
+export const load = loadFlash(async ({ cookies, url }) => {
 	const token = cookies.get('token');
-	const isAuthenticated = !!token;
 	const isLoginPage = url.pathname === '/';
 
+	if (!token && !isLoginPage) {
+		throw redirect(302, '/');
+	}
+
 	return {
-		isAuthenticated,
+		isAuthenticated: !!token,
 		isLoginPage
 	};
-};
+});

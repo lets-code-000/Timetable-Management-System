@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	ssr: {
+		noExternal: ['sveltekit-flash-message']
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

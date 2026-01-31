@@ -11,15 +11,17 @@ from app.routers import dashboard
 from app.middleware import add_timing_middleware  
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+
+# Timing middleware added first so CORS wraps it (last-added = outermost)
+add_timing_middleware(app)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your frontend URL
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-add_timing_middleware(app)
 
 # Create tables at startup
 @app.on_event("startup")

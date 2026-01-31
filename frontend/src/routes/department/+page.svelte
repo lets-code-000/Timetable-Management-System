@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { LayoutDashboard, Trash2 } from 'lucide-svelte';
+	import { LayoutDashboard, Trash2, Plus } from 'lucide-svelte';
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/component/PageHeader.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	interface Props {
 		data: PageData;
@@ -21,7 +22,13 @@
 />
 
 		<div class="rounded-lg bg-white p-6 shadow-md">
-			<h2 class="mb-4 text-2xl font-semibold">Departments</h2>
+			<div class="mb-4 flex items-center justify-between">
+				<h2 class="text-2xl font-semibold">Departments</h2>
+				<Button href="/department/create">
+					<Plus class="h-4 w-4" />
+					Create
+				</Button>
+			</div>
 
 			{#if data.departments && data.departments.length > 0}
 				<div class="overflow-x-auto">
