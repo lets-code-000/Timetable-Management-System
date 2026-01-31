@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { Building2, Trash2 } from 'lucide-svelte';
+	import { Building2, Trash2, Plus } from 'lucide-svelte';
 	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/component/PageHeader.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	interface Props {
 		data: PageData;
@@ -23,9 +24,10 @@
 		<div class="rounded-lg bg-white p-6 shadow-md">
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-2xl font-semibold">All Classrooms</h2>
-				<span class="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-					Total: {data.classrooms?.length || 0}
-				</span>
+				<Button href="/classroom/create">
+					<Plus class="h-4 w-4" />
+					Create
+				</Button>
 			</div>
 
 			{#if data.classrooms && data.classrooms.length > 0}
