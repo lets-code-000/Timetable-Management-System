@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { PUBLIC_API_BASE_URL } from "$env/static/public";
 
   // --- Common state ---
   let showLogin = $state(true); // true = show login by default
@@ -24,7 +25,7 @@
   async function loadColleges() {
     if (collegesLoaded) return;
     try {
-      const res = await fetch("http://localhost:8000/college/public");
+      const res = await fetch(`${PUBLIC_API_BASE_URL}/college/public`);
       if (res.ok) {
         colleges = await res.json();
       }
@@ -42,7 +43,7 @@
     formData.append("password", loginPassword);
 
     try {
-      const res = await fetch("http://localhost:8000/auth/login", {
+      const res = await fetch(`${PUBLIC_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData
@@ -89,7 +90,7 @@
     }
 
     try {
-      const res = await fetch("http://localhost:8000/auth/register", {
+      const res = await fetch(`${PUBLIC_API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user)

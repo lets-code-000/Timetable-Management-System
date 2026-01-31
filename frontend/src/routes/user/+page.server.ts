@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 interface User {
   id: number;
@@ -18,7 +19,7 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
   try {
     // Fetch users from FastAPI backend
-    const response = await fetch('http://localhost:8000/user', {
+    const response = await fetch(`${PUBLIC_API_BASE_URL}/user`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

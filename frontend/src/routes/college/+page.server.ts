@@ -1,5 +1,6 @@
 import { redirect, fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 interface College {
 	id: number;
@@ -16,7 +17,7 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 	}
 
 	try {
-		const response = await fetch('http://localhost:8000/college/', {
+		const response = await fetch(`${PUBLIC_API_BASE_URL}/college/`, {
 			method: 'GET',
 			headers: {
 				Authorization: `Bearer ${token}`,
@@ -66,7 +67,7 @@ export const actions: Actions = {
 		if (!id) return fail(400, { error: 'College ID missing' });
 
 		try {
-			const res = await fetch(`http://localhost:8000/college/${id}`, {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/college/${id}`, {
 				method: 'DELETE',
 				headers: {
 					Authorization: `Bearer ${token}`,
