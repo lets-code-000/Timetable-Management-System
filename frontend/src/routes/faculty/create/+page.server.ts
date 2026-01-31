@@ -1,13 +1,14 @@
 import { fail } from '@sveltejs/kit';
 import { redirect } from 'sveltekit-flash-message/server';
 import type { Actions, PageServerLoad } from './$types';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
 	const token = cookies.get('token');
 	if (!token) redirect(302, '/');
 
 	try {
-		const res = await fetch('http://localhost:8000/department/', {
+		const res = await fetch(`${PUBLIC_API_BASE_URL}/department/`, {
 			headers: {
 				Authorization: `Bearer ${token}`,
 				'Content-Type': 'application/json'
@@ -48,7 +49,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const res = await fetch('http://localhost:8000/faculty/', {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/faculty/`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${token}`,

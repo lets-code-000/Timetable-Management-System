@@ -1,5 +1,6 @@
 import { redirect ,fail,type Actions} from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 
 interface Department {
@@ -20,7 +21,7 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
   try {
     // Fetch departments from FastAPI backend
-		const response = await fetch('http://localhost:8000/department', {
+		const response = await fetch(`${PUBLIC_API_BASE_URL}/department`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -73,7 +74,7 @@ export const actions: Actions = {
 		if (!id) return fail(400, { error: 'Department ID missing' });
 
 		try {
-			const res = await fetch(`http://localhost:8000/department/${id}`, {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/department/${id}`, {
 				method: 'DELETE',
 				headers: {
 					Authorization: `Bearer ${token}`,

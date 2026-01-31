@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { redirect } from 'sveltekit-flash-message/server';
 import type { Actions, PageServerLoad } from './$types';
+import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 export const load: PageServerLoad = async ({ cookies }) => {
 	const token = cookies.get('token');
@@ -27,7 +28,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const res = await fetch('http://localhost:8000/college/', {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/college/`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${token}`,
