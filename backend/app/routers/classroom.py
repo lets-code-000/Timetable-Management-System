@@ -16,8 +16,22 @@ def create_classroom(classroom: ClassroomCreate, session: Session = Depends(get_
     if not department:
         raise HTTPException(status_code=404, detail="Department not found")
 
+    existing_classroom = session.exec(
+        select(Classroom).where(
+            Classroom.room_no == classroom.room_no,
+            Classroom.department_id == classroom.department_id
+        )
+    ).first()
+
+    if existing_classroom:
+        raise HTTPException(
+            status_code=400,
+            detail="Classroom with this room number already exists in this department"
+        )
+        
     db_classroom = Classroom.model_validate(classroom)
     db_classroom.college_id = current_user.college_id
+    
     session.add(db_classroom)
     session.commit()
     session.refresh(db_classroom)
