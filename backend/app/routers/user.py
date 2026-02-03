@@ -40,6 +40,24 @@ def update_current_user(
 
     return current_user
 
+@router.delete("/me", response_model=DeleteUserResponse)
+def delete_current_user(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_public = UserOut.model_validate(current_user)
+
+    session.delete(current_user)
+    session.commit()
+
+    return DeleteUserResponse(
+        message="User deleted successfully",
+        data=user_public
+    )
+
 @router.get("/{user_id}", response_model=UserOut)
 def get_user_by_id(user_id: int, session: Session = Depends(get_db), current_user=Depends(get_current_user)):
     db_user = session.get(User, user_id)
