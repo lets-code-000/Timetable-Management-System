@@ -11,7 +11,7 @@ class User(SQLModel, table=True):
     phone_number: str | None = Field(default=None, index=True)
     hashed_password: str
     
-    token_version: int = Field(default=0)
+    token_version: int = Field(default=0, nullable=False)
 
     role_id: int | None = Field(default=None, foreign_key="roles.id")
     college_id: int | None = Field(default=None, foreign_key="college.id")
