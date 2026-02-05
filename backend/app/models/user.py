@@ -10,6 +10,8 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     phone_number: str | None = Field(default=None, index=True)
     hashed_password: str
+    
+    token_version: int = Field(default=0)
 
     role_id: int | None = Field(default=None, foreign_key="roles.id")
     college_id: int | None = Field(default=None, foreign_key="college.id")

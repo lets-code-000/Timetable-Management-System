@@ -45,11 +45,14 @@ def delete_current_user(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     user_public = UserOut.model_validate(current_user)
 
+    # 🔐 invalidate all tokens
+    current_user.token_version += 1
+    session.add(current_user)
+    session.commit()
+
+    # delete user
     session.delete(current_user)
     session.commit()
 
