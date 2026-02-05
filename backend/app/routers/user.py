@@ -40,6 +40,27 @@ def update_current_user(
 
     return current_user
 
+@router.delete("/me", response_model=DeleteUserResponse)
+def delete_current_user(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    user_public = UserOut.model_validate(current_user)
+
+    # 🔐 invalidate all tokens
+    current_user.token_version += 1
+    session.add(current_user)
+    session.commit()
+
+    # delete user
+    session.delete(current_user)
+    session.commit()
+
+    return DeleteUserResponse(
+        message="User deleted successfully",
+        data=user_public
+    )
+
 @router.get("/{user_id}", response_model=UserOut)
 def get_user_by_id(user_id: int, session: Session = Depends(get_db), current_user=Depends(get_current_user)):
     db_user = session.get(User, user_id)
