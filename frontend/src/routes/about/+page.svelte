@@ -29,7 +29,6 @@
 		padding-bottom: 10px;
 	}
 
-	/* 👇 GLOBAL STYLES FOR {@html} CONTENT */
 
 	:global(.doc-content p) {
 		margin-bottom: 16px;
