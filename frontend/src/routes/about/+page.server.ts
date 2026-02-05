@@ -16,6 +16,8 @@ export const load: PageServerLoad = async () => {
 				<li>Faculty availability management</li>
 				<li>Room and resource allocation</li>
 				<li>Scalable for multiple departments</li>
+				<li>User roles: Admin, Faculty, Student</li>
+				<li>Interactive timetable visualization</li>
 			</ul>
 		`
 	};
