@@ -13,3 +13,4 @@ class Department(SQLModel, table=True):
     classrooms: List["Classroom"] = Relationship(back_populates="department")
     faculties: List["Faculty"] = Relationship()
     subjects: List["Subject"] = Relationship()
+    timetables: List["Timetable"] = Relationship(back_populates="department")
