@@ -1,16 +1,82 @@
 <script lang="ts">
-	import { Building2, Trash2, Plus } from 'lucide-svelte';
+	import { Building2, Plus } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
 		data: PageData;
 	}
 
 	let { data }: Props = $props();
+
+	let colleges = $state(data.colleges || []);
+	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+
+	function showToast(type: 'success' | 'error', message: string) {
+		toast = { type, message };
+		setTimeout(() => {
+			toast = null;
+		}, 3000);
+	}
+
+	async function handleDelete(id: number) {
+		const token = document.cookie
+			.split('; ')
+			.find(row => row.startsWith('token='))
+			?.split('=')[1];
+
+		if (!token) {
+			showToast('error', 'Not authorized');
+			return;
+		}
+
+		// Optimistic update - remove from UI immediately
+		const previousColleges = [...colleges];
+		colleges = colleges.filter(c => c.id !== id);
+
+		try {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/college/${id}`, {
+				method: 'DELETE',
+				headers: {
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!res.ok) {
+				// Revert on error
+				colleges = previousColleges;
+				const errData = await res.json().catch(() => ({ detail: 'Delete failed' }));
+				showToast('error', errData.detail || 'Failed to delete college');
+				return;
+			}
+
+			showToast('success', 'College deleted successfully');
+		} catch (err) {
+			// Revert on error
+			colleges = previousColleges;
+			showToast('error', 'Server error while deleting college');
+		}
+	}
+
+	function handleEdit(id: number) {
+		// Edit functionality will be implemented in next PR
+		console.log('Edit college:', id);
+	}
 </script>
+
+<!-- Toast Notification -->
+{#if toast}
+	<div class="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+		<div class="flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg {toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white">
+			<span class="text-sm font-medium">{toast.message}</span>
+			<button onclick={() => toast = null} class="ml-2 hover:opacity-80">✕</button>
+		</div>
+	</div>
+{/if}
 
 <div class="min-h-screen bg-gray-100 p-8">
 	<div class="mx-auto max-w-6xl">
@@ -29,7 +95,7 @@
 				</Button>
 			</div>
 
-			{#if data.colleges && data.colleges.length > 0}
+			{#if colleges && colleges.length > 0}
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead class="bg-gray-50">
@@ -49,18 +115,16 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-200 bg-white">
-							{#each data.colleges as college}
+							{#each colleges as college}
 								<tr class="hover:bg-gray-50">
 									<td class="px-6 py-4 text-sm font-medium text-gray-900">{college.name}</td>
 									<td class="px-6 py-4 text-sm text-gray-700">{college.address || '-'}</td>
 									<td class="px-6 py-4 text-sm text-gray-700">{college.contact || '-'}</td>
 									<td class="px-6 py-4 text-center">
-										<form method="POST" action="?/deleteCollege" use:enhance>
-											<input type="hidden" name="id" value={college.id} />
-											<button type="submit" class="text-red-600 hover:text-red-800">
-												<Trash2 class="inline-block h-5 w-5" />
-											</button>
-										</form>
+										<ActionMenu
+											onEdit={() => handleEdit(college.id)}
+											onDelete={() => handleDelete(college.id)}
+										/>
 									</td>
 								</tr>
 							{/each}

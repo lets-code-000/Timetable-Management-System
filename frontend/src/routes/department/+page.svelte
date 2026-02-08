@@ -1,25 +1,67 @@
 <script lang="ts">
-	import { LayoutDashboard, Trash2, Plus } from 'lucide-svelte';
+	import { LayoutDashboard, Plus } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import { enhance } from '$app/forms';
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
 		data: PageData;
 	}
 
 	let { data }: Props = $props();
+
+	let departments = $state(data.departments || []);
+	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+
+	function showToast(type: 'success' | 'error', message: string) {
+		toast = { type, message };
+		setTimeout(() => { toast = null; }, 3000);
+	}
+
+	async function handleDelete(id: number) {
+		const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+		if (!token) { showToast('error', 'Not authorized'); return; }
+
+		const previous = [...departments];
+		departments = departments.filter(d => d.id !== id);
+
+		try {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/department/${id}`, {
+				method: 'DELETE',
+				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+			});
+			if (!res.ok) {
+				departments = previous;
+				const errData = await res.json().catch(() => ({ detail: 'Delete failed' }));
+				showToast('error', errData.detail || 'Failed to delete department');
+				return;
+			}
+			showToast('success', 'Department deleted successfully');
+		} catch (err) {
+			departments = previous;
+			showToast('error', 'Server error while deleting department');
+		}
+	}
+
+	function handleEdit(id: number) {
+		console.log('Edit department:', id);
+	}
 </script>
+
+{#if toast}
+	<div class="fixed top-4 right-4 z-50">
+		<div class="flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg {toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white">
+			<span class="text-sm font-medium">{toast.message}</span>
+			<button onclick={() => toast = null} class="ml-2 hover:opacity-80">✕</button>
+		</div>
+	</div>
+{/if}
 
 <div class="min-h-screen bg-gray-100 p-8">
 	<div class="mx-auto max-w-6xl">
-		
-		<PageHeader
-	title="Departments"
-	subtitle="Manage all Departments and their details"
-	Icon={LayoutDashboard}
-/>
+		<PageHeader title="Departments" subtitle="Manage all Departments and their details" Icon={LayoutDashboard} />
 
 		<div class="rounded-lg bg-white p-6 shadow-md">
 			<div class="mb-4 flex items-center justify-between">
@@ -30,38 +72,25 @@
 				</Button>
 			</div>
 
-			{#if data.departments && data.departments.length > 0}
+			{#if departments && departments.length > 0}
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead class="bg-gray-50">
 							<tr>
-								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-									Department Name
-								</th>
-								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-									Year
-								</th>
-								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-									Description
-								</th>
-								<th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-									Actions
-								</th>
+								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Department Name</th>
+								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Year</th>
+								<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Description</th>
+								<th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-200 bg-white">
-							{#each data.departments as department}
+							{#each departments as department}
 								<tr class="hover:bg-gray-50">
 									<td class="px-6 py-4 text-sm font-medium text-gray-900">{department.name}</td>
 									<td class="px-6 py-4 text-sm text-gray-700">{department.year}</td>
 									<td class="px-6 py-4 text-sm text-gray-600">{department.description || '-'}</td>
 									<td class="px-6 py-4 text-center">
-										<form method="POST"  action="?/deleteDepartment" use:enhance>
-											<input type="hidden" name="id" value={department.id} />
-											<button type="submit" class="text-red-600 hover:text-red-800">
-												<Trash2 class="w-5 h-5 inline-block" />
-											</button>
-										</form>
+										<ActionMenu onEdit={() => handleEdit(department.id)} onDelete={() => handleDelete(department.id)} />
 									</td>
 								</tr>
 							{/each}
