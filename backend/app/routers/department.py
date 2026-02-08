@@ -1,6 +1,6 @@
 # app/routes/department.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from typing import List
 from app.database import get_db
 from app.models.department import Department
@@ -25,8 +25,22 @@ def create_department(dept: DepartmentCreate, db: Session = Depends(get_db),curr
     return db_dept
 
 @router.get("/", response_model=List[DepartmentRead])
-def get_departments(db: Session = Depends(get_db),current_user = Depends(get_current_user)):
-    departments = db.exec(select(Department).where(Department.college_id == current_user.college_id)).all()
+def get_departments(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    name: str | None = None,  
+):
+    query = select(Department).where(
+        Department.college_id == current_user.college_id
+    )
+
+    if name:
+        query = query.where(
+            func.trim(func.lower(Department.name))
+            .like(f"{name.strip().lower()}%")
+        )
+
+    departments = db.exec(query).all()
     return departments
 
 @router.get("/{department_id}", response_model=DepartmentRead)
