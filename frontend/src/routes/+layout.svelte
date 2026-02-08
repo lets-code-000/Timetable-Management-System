@@ -30,7 +30,7 @@
 {/if}
 
 {#if data.isAuthenticated && !data.isLoginPage}
-	<Sidebar>
+	<Sidebar currentUser={data.currentUser}>
 		{@render children?.()}
 	</Sidebar>
 {:else}

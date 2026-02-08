@@ -6,6 +6,7 @@ from app.routers import  classroom
 from app.routers import  faculty
 from app.routers import  role
 from app.routers import  subject
+from app.routers import  timetable
 from app.routers import auth
 from app.routers import user
 from app.routers import dashboard
@@ -37,5 +38,6 @@ app.include_router(classroom.router, prefix="/classroom", tags=["classroom"])
 app.include_router(faculty.router, prefix="/faculty", tags=["Faculty"])
 app.include_router(role.router, prefix="/roles", tags=["Roles"])
 app.include_router(subject.router, prefix="/subject", tags=["Subject"])
+app.include_router(timetable.router, prefix="/timetable", tags=["Timetable"])
 app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(dashboard.router)

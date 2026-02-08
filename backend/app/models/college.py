@@ -14,3 +14,4 @@ class College(SQLModel, table=True):
     faculties: List["Faculty"] = Relationship(back_populates="college")
     subjects: List["Subject"] = Relationship(back_populates="college")
     users: List["User"] = Relationship(back_populates="college")
+    timetables: List["Timetable"] = Relationship(back_populates="college")
