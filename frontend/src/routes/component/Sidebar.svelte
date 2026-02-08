@@ -1,11 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import type { Snippet } from 'svelte';
 
-	import { BookOpenText,Hotel,UserRoundPen,GraduationCap,BookMarked,CalendarDays,LogOut,Building2 } from 'lucide-svelte';
+	import { BookOpenText, Hotel, UserRoundPen, GraduationCap, BookMarked, CalendarDays, LogOut, Building2, User, ChevronUp } from 'lucide-svelte';
 
-	let { children }: { children?: Snippet } = $props();
+	interface CurrentUser {
+		id: number;
+		username: string;
+		email: string;
+		phone_number: string | null;
+		role_id: number | null;
+		college_id: number | null;
+	}
+
+	let { children, currentUser }: { children?: Snippet; currentUser?: CurrentUser | null } = $props();
+
+	let isMenuOpen = $state(false);
 
 	const menuItems = [
 		{ name: 'College', path: '/college', icon: Building2 },
@@ -21,15 +31,35 @@
 		goto(path);
 	}
 
+	function toggleMenu() {
+		isMenuOpen = !isMenuOpen;
+	}
+
 	function logout() {
-		// Delete the token cookie
 		document.cookie = 'token=; path=/; max-age=0';
-		// Also clear from localStorage if it exists
 		localStorage.removeItem('token');
-		// Redirect to login page
 		goto('/');
 	}
+
+	function goToProfile() {
+		isMenuOpen = false;
+		goto('/profile');
+	}
+
+	function handleLogout() {
+		isMenuOpen = false;
+		logout();
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (isMenuOpen && !target.closest('.user-menu-container')) {
+			isMenuOpen = false;
+		}
+	}
 </script>
+
+<svelte:window onclick={handleClickOutside} />
 
 <div class="flex min-h-screen">
 	<!-- Sidebar -->
@@ -57,22 +87,42 @@
 			{/each}
 		</div>
 
-		<!-- Bottom Section -->
-		<div class="border-t border-gray-300 pt-6">
-			<div class="flex flex-row items-center mb-4">
-				<Avatar.Root class="h-12 w-12">
-					<Avatar.Image src="https://github.com/shadcn.png" alt="@shadcn" />
-					<Avatar.Fallback>CN</Avatar.Fallback>
-				</Avatar.Root>
-				<p class="mt-2 pl-2 text-sm font-semibold text-black">xyz</p>
-			</div>
+		<!-- Bottom Section - User Menu -->
+		<div class="border-t border-gray-300 pt-4 relative user-menu-container">
+			<!-- Dropdown Menu (appears above the button) -->
+			{#if isMenuOpen}
+				<div class="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+					<button
+						class="flex w-full items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
+						onclick={goToProfile}
+					>
+						<User class="w-4 h-4" />
+						<span class="text-sm font-medium">Profile</span>
+					</button>
+					<div class="border-t border-gray-100"></div>
+					<button
+						class="flex w-full items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
+						onclick={handleLogout}
+					>
+						<LogOut class="w-4 h-4" />
+						<span class="text-sm font-medium">Logout</span>
+					</button>
+				</div>
+			{/if}
+
+			<!-- User Button -->
 			<button
-				class="group flex w-full items-center gap-4 rounded-lg px-4 py-3 font-medium text-gray-100
-                    shadow-md transition-all duration-300 hover:bg-red-500 hover:text-white"
-				onclick={logout}
+				class="flex w-full items-center justify-between gap-2 rounded-lg bg-white/90 px-4 py-3 font-semibold text-gray-800
+					shadow-md transition-all duration-300 hover:bg-white cursor-pointer border border-gray-200"
+				onclick={toggleMenu}
 			>
-				<LogOut class="w-5 h-5 text-black group-hover:text-white transition-colors" />
-				<span>Logout</span>
+				<div class="flex items-center gap-3">
+					<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">
+						{currentUser?.username?.charAt(0).toUpperCase() ?? 'U'}
+					</div>
+					<span class="text-sm">{currentUser?.username ?? 'User'}</span>
+				</div>
+				<ChevronUp class="w-4 h-4 transition-transform {isMenuOpen ? '' : 'rotate-180'}" />
 			</button>
 		</div>
 	</aside>
