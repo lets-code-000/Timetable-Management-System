@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, or_, select
 from app.database import get_db
 from app.models.classroom import Classroom
 from app.models.department import Department
@@ -38,10 +38,26 @@ def create_classroom(classroom: ClassroomCreate, session: Session = Depends(get_
     return db_classroom
 
 @router.get("/", response_model=list[ClassroomRead])
-def get_classrooms(session: Session = Depends(get_db),current_user = Depends(get_current_user)):
-    statement = select(Classroom).where(Classroom.college_id == current_user.college_id)
-    results = session.exec(statement).all()
-    return results
+def get_classrooms(
+    session: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    q: str | None = None,
+):
+    query = select(Classroom).where(
+        Classroom.college_id == current_user.college_id
+    )
+
+    if q:
+        search = f"{q.strip().lower()}%"
+        query = query.where(
+            or_(
+                func.lower(Classroom.room_no).like(search),
+                func.lower(Classroom.building_name).like(search),
+            )
+        )
+
+    classrooms = session.exec(query).all()
+    return classrooms
 
 @router.get("/{classroom_id}", response_model=ClassroomRead)
 def get_classroom_by_id(classroom_id: int, session: Session = Depends(get_db), current_user = Depends(get_current_user)):
