@@ -1,26 +1,68 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { Building2, Trash2, Plus } from 'lucide-svelte';
-	import { enhance } from '$app/forms';
+	import { Building2, Plus } from 'lucide-svelte';
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
 		data: PageData;
 	}
 
 	let { data }: Props = $props();
+
+	let classrooms = $state(data.classrooms || []);
+	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+
+	function showToast(type: 'success' | 'error', message: string) {
+		toast = { type, message };
+		setTimeout(() => { toast = null; }, 3000);
+	}
+
+	async function handleDelete(id: number) {
+		const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+		if (!token) { showToast('error', 'Not authorized'); return; }
+
+		const previous = [...classrooms];
+		classrooms = classrooms.filter(c => c.id !== id);
+
+		try {
+			const res = await fetch(`${PUBLIC_API_BASE_URL}/classroom/${id}`, {
+				method: 'DELETE',
+				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+			});
+			if (!res.ok) {
+				classrooms = previous;
+				const errData = await res.json().catch(() => ({ detail: 'Delete failed' }));
+				showToast('error', errData.detail || 'Failed to delete classroom');
+				return;
+			}
+			showToast('success', 'Classroom deleted successfully');
+		} catch (err) {
+			classrooms = previous;
+			showToast('error', 'Server error while deleting classroom');
+		}
+	}
+
+	function handleEdit(id: number) {
+		console.log('Edit classroom:', id);
+	}
 </script>
+
+{#if toast}
+	<div class="fixed top-4 right-4 z-50">
+		<div class="flex items-center gap-2 rounded-lg px-4 py-3 shadow-lg {toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white">
+			<span class="text-sm font-medium">{toast.message}</span>
+			<button onclick={() => toast = null} class="ml-2 hover:opacity-80">✕</button>
+		</div>
+	</div>
+{/if}
 
 <div class="min-h-screen bg-gray-100 p-8">
 	<div class="mx-auto max-w-7xl">
-		
-		<PageHeader
-	title="Classrooms"
-	subtitle="Manage all classrooms and their details"
-	Icon={Building2}
-/>
-		<!-- Table -->
+		<PageHeader title="Classrooms" subtitle="Manage all classrooms and their details" Icon={Building2} />
+
 		<div class="rounded-lg bg-white p-6 shadow-md">
 			<div class="mb-4 flex items-center justify-between">
 				<h2 class="text-2xl font-semibold">All Classrooms</h2>
@@ -30,7 +72,7 @@
 				</Button>
 			</div>
 
-			{#if data.classrooms && data.classrooms.length > 0}
+			{#if classrooms && classrooms.length > 0}
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead class="bg-gray-50">
@@ -44,7 +86,7 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-200 bg-white">
-							{#each data.classrooms as classroom}
+							{#each classrooms as classroom}
 								<tr class="hover:bg-gray-50">
 									<td class="px-6 py-4 text-sm font-medium text-gray-900">{classroom.room_no}</td>
 									<td class="px-6 py-4 text-sm text-gray-700">{classroom.building_name}</td>
@@ -56,12 +98,7 @@
 										</span>
 									</td>
 									<td class="px-6 py-4 text-center">
-										<form method="POST" action="?/deleteClassroom" use:enhance>
-											<input type="hidden" name="id" value={classroom.id} />
-											<button type="submit" class="text-red-600 hover:text-red-800" title="Delete Classroom">
-												<Trash2 class="w-5 h-5 inline-block" />
-											</button>
-										</form>
+										<ActionMenu onEdit={() => handleEdit(classroom.id)} onDelete={() => handleDelete(classroom.id)} />
 									</td>
 								</tr>
 							{/each}
