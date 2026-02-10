@@ -37,7 +37,8 @@ def get_faculties(
             .like(f"{name.strip().lower()}%")
         )
 
-    return db.exec(query).all()
+    faculties = db.exec(query).all()
+    return faculties
 
 @router.get("/{faculty_id}", response_model=FacultyRead)
 def get_faculty_by_id(faculty_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):

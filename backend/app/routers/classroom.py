@@ -41,14 +41,14 @@ def create_classroom(classroom: ClassroomCreate, session: Session = Depends(get_
 def get_classrooms(
     session: Session = Depends(get_db),
     current_user = Depends(get_current_user),
-    q: str | None = None,
+    search_text: str | None = None,
 ):
     query = select(Classroom).where(
         Classroom.college_id == current_user.college_id
     )
 
-    if q:
-        search = f"{q.strip().lower()}%"
+    if search_text:
+        search = f"{search_text.strip().lower()}%"
         query = query.where(
             or_(
                 func.lower(Classroom.room_no).like(search),

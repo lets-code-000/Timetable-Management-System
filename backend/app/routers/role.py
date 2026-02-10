@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from app.database import get_db
 from app.models.roles import Role
 from app.schemas.role import RoleCreate, RoleRead, DeleteRoleResponse
@@ -18,8 +18,21 @@ def add_role(role: RoleCreate, db: Session = Depends(get_db), current_user=Depen
 
 
 @router.get("/", response_model=list[RoleRead])
-def read_roles(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return db.exec(select(Role)).all()
+def read_roles(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    name: str | None = None,
+):
+    query = select(Role)
+
+    if name:
+        query = query.where(
+            func.trim(func.lower(Role.role_name))
+            .like(f"{name.strip().lower()}%")
+        )
+
+    roles = db.exec(query).all()
+    return roles
 
 
 @router.get("/{role_id}", response_model=RoleRead)
