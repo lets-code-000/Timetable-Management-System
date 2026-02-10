@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from typing import List
 from app.database import get_db
 from app.models.college import College
@@ -23,8 +23,20 @@ def create_college(college: CollegeCreate, db: Session = Depends(get_db), curren
 
 
 @router.get("/", response_model=List[CollegeRead])
-def get_colleges(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    colleges = db.exec(select(College)).all()
+def get_colleges(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    name: str | None = None,
+):
+    query = select(College)
+
+    if name:
+        query = query.where(
+            func.trim(func.lower(College.name))
+            .like(f"{name.strip().lower()}%")
+        )
+
+    colleges = db.exec(query).all()
     return colleges
 
 

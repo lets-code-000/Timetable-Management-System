@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from typing import List
 from app.database import get_db
 from app.models.subject import Subject
@@ -25,8 +25,24 @@ def create_subject(subject: SubjectCreate, db: Session = Depends(get_db), curren
     return db_subject
 
 @router.get("/", response_model=List[SubjectRead])
-def get_subjects(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    return db.exec(select(Subject).where(Subject.college_id == current_user.college_id)).all()
+def get_subjects(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    name: str | None = None,
+):
+    query = select(Subject).where(
+        Subject.college_id == current_user.college_id
+    )
+
+    if name:
+        query = query.where(
+            func.trim(func.lower(Subject.name))
+            .like(f"{name.strip().lower()}%")
+        )
+
+    subjects = db.exec(query).all()
+    return subjects
+
 
 @router.get("/{subject_id}", response_model=SubjectRead)
 def get_subject_by_id(subject_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):

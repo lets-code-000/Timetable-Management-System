@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, UserUpdate, DeleteUserResponse
@@ -9,10 +9,21 @@ from app.crud.deps import get_current_user
 router = APIRouter()
 
 @router.get("/", response_model=list[UserOut])
-def get_users(session: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    statement = select(User)
-    results = session.exec(statement).all()
-    return results
+def get_users(
+    session: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    name: str | None = None,
+):
+    query = select(User)
+
+    if name:
+        query = query.where(
+            func.trim(func.lower(User.username))
+            .like(f"{name.strip().lower()}%")
+        )
+
+    users = session.exec(query).all()
+    return users
 
 @router.get("/me", response_model=UserOut)
 def get_current_user_info(current_user=Depends(get_current_user)):
