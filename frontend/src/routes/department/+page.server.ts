@@ -9,22 +9,30 @@ interface Department {
 	description?: string;
 }
 
-export const load: PageServerLoad = async ({ cookies, fetch }) => {
-	
+export const load: PageServerLoad = async ({ cookies, url, fetch }) => {
 	const token = cookies.get('token');
 
 	if (!token) {
 		throw redirect(302, '/');
 	}
 
+	const search = url.searchParams.get('search') || '';
+
+	const queryParams = new URLSearchParams({
+		...(search && { name: search })
+	});
+
 	try {
-		const response = await fetch(`${PUBLIC_API_BASE_URL}/department`, {
-			method: 'GET',
-			headers: {
-				Authorization: `Bearer ${token}`,
-				'Content-Type': 'application/json'
+		const response = await fetch(
+			`${PUBLIC_API_BASE_URL}/department?${queryParams}`,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
 			}
-		});
+		);
 
 		if (!response.ok) {
 			if (response.status === 401) {
@@ -38,9 +46,8 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
 			return {
 				departments: [],
-				error:
-					errorData.detail ||
-					`Failed to fetch departments: ${response.statusText}`
+				search,
+				error: errorData.detail || 'Failed to fetch departments'
 			};
 		}
 
@@ -48,17 +55,13 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
 		return {
 			departments,
+			search,
 			error: null
 		};
 	} catch (error) {
-		if (error instanceof Response && error.status === 302) {
-			throw error;
-		}
-
-		console.error('Error fetching departments:', error);
-
 		return {
 			departments: [],
+			search,
 			error:
 				error instanceof Error
 					? error.message
@@ -69,8 +72,8 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
 export const actions: Actions = {
 	deleteDepartment: async ({ request, cookies, fetch }) => {
-		const data = await request.formData();
-		const id = data.get('id') as string;
+		const formData = await request.formData();
+		const id = formData.get('id') as string;
 		const token = cookies.get('token');
 
 		if (!token) return fail(401, { error: 'Not authorized' });
@@ -107,7 +110,6 @@ export const actions: Actions = {
 				throw redirect(303, '/department');
 			}
 
-			// Success flash message
 			cookies.set(
 				'flash',
 				JSON.stringify({
@@ -119,8 +121,6 @@ export const actions: Actions = {
 
 			throw redirect(303, '/department');
 		} catch (err) {
-			console.error(err);
-
 			cookies.set(
 				'flash',
 				JSON.stringify({

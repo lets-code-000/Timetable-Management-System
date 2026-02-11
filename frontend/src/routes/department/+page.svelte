@@ -4,6 +4,8 @@
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
@@ -12,11 +14,9 @@
 
 	let { data }: Props = $props();
 
-	let allDepartments = $state(data.departments || []); 
-	let departments = $state([...allDepartments]);
+	const departments = $derived(data?.departments || []);
+	const searchValue = $derived(data?.search || '');
 
-	let search = $state('');
-	let loading = $state(false);
 	let timeout: ReturnType<typeof setTimeout>;
 
 	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -26,42 +26,21 @@
 		setTimeout(() => { toast = null; }, 3000);
 	}
 
-	async function handleSearch() {
+	function handleSearch(event: Event) {
+		const value = (event.target as HTMLInputElement).value;
+
 		clearTimeout(timeout);
 
-		timeout = setTimeout(async () => {
-			
-			if (!search.trim()) {
-				departments = [...allDepartments];
-				return;
+		timeout = setTimeout(() => {
+			const url = new URL(page.url);
+
+			if (value.trim()) {
+				url.searchParams.set('search', value);
+			} else {
+				url.searchParams.delete('search');
 			}
 
-			loading = true;
-
-			const token = document.cookie
-				.split('; ')
-				.find(row => row.startsWith('token='))?.split('=')[1];
-
-			if (!token) {
-				showToast('error', 'Not authorized');
-				return;
-			}
-
-			const res = await fetch(
-				`${PUBLIC_API_BASE_URL}/department?name=${encodeURIComponent(search)}`,
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-						'Content-Type': 'application/json'
-					}
-				}
-			);
-
-			if (res.ok) {
-				departments = await res.json();
-			}
-
-			loading = false;
+			goto(url.toString(), { keepFocus: true, invalidateAll: true });
 		}, 300);
 	}
 
@@ -70,22 +49,26 @@
 		if (!token) { showToast('error', 'Not authorized'); return; }
 
 		const previous = [...departments];
-		departments = departments.filter(d => d.id !== id);
-		allDepartments = allDepartments.filter(d => d.id !== id);
 
 		try {
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/department/${id}`, {
 				method: 'DELETE',
-				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+				headers: { 
+					'Authorization': `Bearer ${token}`, 
+					'Content-Type': 'application/json' 
+				}
 			});
+
 			if (!res.ok) {
-				departments = previous;
 				showToast('error', 'Failed to delete department');
 				return;
 			}
+
 			showToast('success', 'Department deleted successfully');
+
+			goto(page.url.toString(), { invalidateAll: true });
+
 		} catch (err) {
-			departments = previous;
 			showToast('error', 'Server error while deleting department');
 		}
 	}
@@ -130,16 +113,12 @@
 					<input
 						type="text"
 						placeholder="Search departments..."
-						bind:value={search}
-						oninput={handleSearch}  
+						value={searchValue}
+						oninput={handleSearch}
 						class="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-black focus:outline-none"
 					/>
 				</div>
 			</div>
-
-			{#if loading}
-				<p class="mb-2 text-sm text-gray-500">Searching…</p>
-			{/if}
 
 			{#if departments.length > 0}
 				<div class="overflow-x-auto">
@@ -184,10 +163,9 @@
 					</table>
 				</div>
 			{:else}
-				
 				<div class="py-8 text-center text-gray-500">
-					{#if search.trim()}
-						<p>No such department found for "<strong>{search}</strong>"</p>
+					{#if searchValue}
+						<p>No such department found for "<strong>{searchValue}</strong>"</p>
 					{:else}
 						<p>No departments found.</p>
 					{/if}
