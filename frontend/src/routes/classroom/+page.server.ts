@@ -16,41 +16,62 @@ interface Classroom {
 	department: Department;
 }
 
-export const load: PageServerLoad = async ({ cookies, fetch }) => {
+export const load: PageServerLoad = async ({ cookies, url, fetch }) => {
 	const token = cookies.get('token');
 	if (!token) throw redirect(302, '/');
 
+	// ✅ Get search from URL
+	const search = url.searchParams.get('search') || '';
+
+	// ✅ Build backend query (match FastAPI param: search_text)
+	const queryParams = new URLSearchParams({
+		...(search && { search_text: search })
+	});
+
 	try {
-		const response = await fetch(`${PUBLIC_API_BASE_URL}/classroom/`, {
-			method: 'GET',
-			headers: {
-				Authorization: `Bearer ${token}`,
-				'Content-Type': 'application/json'
+		const response = await fetch(
+			`${PUBLIC_API_BASE_URL}/classroom/?${queryParams}`,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
 			}
-		});
+		);
 
 		if (!response.ok) {
 			if (response.status === 401) {
 				cookies.delete('token', { path: '/' });
 				throw redirect(302, '/');
 			}
+
 			const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+
 			return {
 				classrooms: [],
-				error: errorData.detail || `Failed to fetch classrooms: ${response.statusText}`
+				search,
+				error: errorData.detail || 'Failed to fetch classrooms'
 			};
 		}
 
 		const classrooms: Classroom[] = await response.json();
-		return { classrooms, error: null };
+
+		return {
+			classrooms,
+			search,
+			error: null
+		};
+
 	} catch (error) {
-		console.error('Error fetching classrooms:', error);
 		return {
 			classrooms: [],
+			search,
 			error: error instanceof Error ? error.message : 'Failed to fetch classrooms'
 		};
 	}
 };
+
 
 export const actions: Actions = {
 	deleteClassroom: async ({ request, cookies, fetch }) => {

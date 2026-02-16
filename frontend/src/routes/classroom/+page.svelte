@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { Building2, Plus } from 'lucide-svelte';
+	import { Building2, Plus, Search } from 'lucide-svelte';
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
@@ -12,7 +14,11 @@
 
 	let { data }: Props = $props();
 
-	let classrooms = $state(data.classrooms || []);
+	const classrooms = $derived(data.classrooms || []);
+	const searchValue = $derived(data.search || '');
+
+	let timeout: ReturnType<typeof setTimeout>;
+
 	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
 	function showToast(type: 'success' | 'error', message: string) {
@@ -20,27 +26,54 @@
 		setTimeout(() => { toast = null; }, 3000);
 	}
 
+	function handleSearch(event: Event) {
+		const value = (event.target as HTMLInputElement).value;
+
+		clearTimeout(timeout);
+
+		timeout = setTimeout(() => {
+			const url = new URL(page.url);
+
+			if (value.trim()) {
+				url.searchParams.set('search', value);
+			} else {
+				url.searchParams.delete('search');
+			}
+
+			goto(url.toString(), { keepFocus: true, invalidateAll: true });
+		}, 300);
+	}
+
 	async function handleDelete(id: number) {
-		const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
-		if (!token) { showToast('error', 'Not authorized'); return; }
+		const token = document.cookie.split('; ')
+			.find(row => row.startsWith('token='))?.split('=')[1];
+
+		if (!token) { 
+			showToast('error', 'Not authorized'); 
+			return; 
+		}
 
 		const previous = [...classrooms];
-		classrooms = classrooms.filter(c => c.id !== id);
 
 		try {
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/classroom/${id}`, {
 				method: 'DELETE',
-				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+				headers: { 
+					'Authorization': `Bearer ${token}`, 
+					'Content-Type': 'application/json' 
+				}
 			});
+
 			if (!res.ok) {
-				classrooms = previous;
-				const errData = await res.json().catch(() => ({ detail: 'Delete failed' }));
-				showToast('error', errData.detail || 'Failed to delete classroom');
+				showToast('error', 'Failed to delete classroom');
 				return;
 			}
+
 			showToast('success', 'Classroom deleted successfully');
+
+			goto(page.url.toString(), { invalidateAll: true });
+
 		} catch (err) {
-			classrooms = previous;
 			showToast('error', 'Server error while deleting classroom');
 		}
 	}
@@ -61,7 +94,11 @@
 
 <div class="min-h-screen bg-gray-100 p-8">
 	<div class="mx-auto max-w-7xl">
-		<PageHeader title="Classrooms" subtitle="Manage all classrooms and their details" Icon={Building2} />
+		<PageHeader 
+			title="Classrooms" 
+			subtitle="Manage all classrooms and their details" 
+			Icon={Building2} 
+		/>
 
 		<div class="rounded-lg bg-white p-6 shadow-md">
 			<div class="mb-4 flex items-center justify-between">
@@ -71,6 +108,20 @@
 					Create
 				</Button>
 			</div>
+
+			<div class="mb-4 max-w-sm">
+				<div class="relative">
+					<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+					<input
+						type="text"
+						placeholder="Search by room or building..."
+						value={searchValue}
+						oninput={handleSearch}
+						class="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-black focus:outline-none"
+					/>
+				</div>
+			</div>
+
 
 			{#if classrooms && classrooms.length > 0}
 				<div class="overflow-x-auto">
@@ -98,7 +149,10 @@
 										</span>
 									</td>
 									<td class="px-6 py-4 text-center">
-										<ActionMenu onEdit={() => handleEdit(classroom.id)} onDelete={() => handleDelete(classroom.id)} />
+										<ActionMenu 
+											onEdit={() => handleEdit(classroom.id)} 
+											onDelete={() => handleDelete(classroom.id)} 
+										/>
 									</td>
 								</tr>
 							{/each}
@@ -107,7 +161,11 @@
 				</div>
 			{:else}
 				<div class="py-12 text-center text-gray-500">
-					<p class="mt-4 text-lg font-medium">No classrooms found</p>
+					{#if searchValue}
+						<p>No classroom found for "<strong>{searchValue}</strong>"</p>
+					{:else}
+						<p class="mt-4 text-lg font-medium">No classrooms found</p>
+					{/if}
 				</div>
 			{/if}
 		</div>
