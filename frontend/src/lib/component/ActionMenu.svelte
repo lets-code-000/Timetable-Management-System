@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { MoreVertical } from 'lucide-svelte';
 	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 
 	interface Props {
 		onEdit?: () => void;
@@ -18,8 +19,11 @@
 		event.stopPropagation();
 		event.preventDefault();
 
-		// Close all other menus first
-		window.dispatchEvent(new CustomEvent('closeAllMenus', { detail: { except: menuId } }));
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('closeAllMenus', { detail: { except: menuId } })
+			);
+		}
 
 		if (!isOpen && buttonRef) {
 			const rect = buttonRef.getBoundingClientRect();
@@ -28,6 +32,7 @@
 				left: rect.right - 120
 			};
 		}
+
 		isOpen = !isOpen;
 	}
 
@@ -64,11 +69,21 @@
 	}
 
 	onMount(() => {
-		window.addEventListener('closeAllMenus', handleCloseAllMenus as EventListener);
+		if (!browser) return;
+
+		window.addEventListener(
+			'closeAllMenus',
+			handleCloseAllMenus as EventListener
+		);
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('closeAllMenus', handleCloseAllMenus as EventListener);
+		if (!browser) return;
+
+		window.removeEventListener(
+			'closeAllMenus',
+			handleCloseAllMenus as EventListener
+		);
 	});
 </script>
 
