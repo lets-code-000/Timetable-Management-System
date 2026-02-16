@@ -20,10 +20,8 @@ export const load: PageServerLoad = async ({ cookies, url, fetch }) => {
 	const token = cookies.get('token');
 	if (!token) throw redirect(302, '/');
 
-	// ✅ Get search from URL
 	const search = url.searchParams.get('search') || '';
 
-	// ✅ Build backend query (match FastAPI param: search_text)
 	const queryParams = new URLSearchParams({
 		...(search && { search_text: search })
 	});
