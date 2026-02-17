@@ -2,32 +2,59 @@ import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
-export const load: PageServerLoad = async ({ cookies, fetch }) => {
-  const token = cookies.get('token');
-  if (!token) throw redirect(302, '/');
+export const load: PageServerLoad = async ({ cookies, url, fetch }) => {
+	const token = cookies.get('token');
 
-  try {
-    const res = await fetch(`${PUBLIC_API_BASE_URL}/subject`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+	if (!token) {
+		throw redirect(302, '/');
+	}
 
-    if (!res.ok) {
-      if (res.status === 401) {
-        cookies.delete('token', { path: '/' });
-        throw redirect(302, '/');
-      }
-      const errorData = await res.json().catch(() => ({ detail: 'Unknown error' }));
-      return { subjects: [], error: errorData.detail || 'Failed to fetch subjects' };
-    }
+	const search = url.searchParams.get('search') || '';
 
-    const subjects = await res.json();
-    return { subjects, error: null };
-  } catch (err) {
-    return { subjects: [], error: err instanceof Error ? err.message : 'Failed to fetch subjects' };
-  }
+	const queryParams = new URLSearchParams({
+		...(search && { name: search })
+	});
+
+	try {
+		const res = await fetch(
+			`${PUBLIC_API_BASE_URL}/subject?${queryParams}`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+
+		if (!res.ok) {
+			if (res.status === 401) {
+				cookies.delete('token', { path: '/' });
+				throw redirect(302, '/');
+			}
+
+			const errorData = await res.json().catch(() => ({ detail: 'Unknown error' }));
+
+			return {
+				subjects: [],
+				search,
+				error: errorData.detail || 'Failed to fetch subjects'
+			};
+		}
+
+		const subjects = await res.json();
+
+		return {
+			subjects,
+			search,
+			error: null
+		};
+	} catch (err) {
+		return {
+			subjects: [],
+			search,
+			error: err instanceof Error ? err.message : 'Failed to fetch subjects'
+		};
+	}
 };
 
 export const actions: Actions = {
