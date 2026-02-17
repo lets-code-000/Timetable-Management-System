@@ -15,21 +15,30 @@ interface Faculty {
 	department: Department;
 }
 
-export const load: PageServerLoad = async ({ cookies, fetch }) => {
+export const load: PageServerLoad = async ({ cookies, url, fetch }) => {
 	const token = cookies.get('token');
 
 	if (!token) {
 		throw redirect(302, '/');
 	}
 
+	const search = url.searchParams.get('search') || '';
+
+	const queryParams = new URLSearchParams({
+		...(search && { name: search })
+	});
+
 	try {
-		const response = await fetch(`${PUBLIC_API_BASE_URL}/faculty`, {
-			method: 'GET',
-			headers: {
-				Authorization: `Bearer ${token}`,
-				'Content-Type': 'application/json'
+		const response = await fetch(
+			`${PUBLIC_API_BASE_URL}/faculty?${queryParams}`,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json'
+				}
 			}
-		});
+		);
 
 		if (!response.ok) {
 			if (response.status === 401) {
@@ -38,9 +47,11 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 			}
 
 			const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+
 			return {
 				faculties: [],
-				error: errorData.detail || `Failed to fetch faculties: ${response.statusText}`
+				search,
+				error: errorData.detail || 'Failed to fetch faculties'
 			};
 		}
 
@@ -48,20 +59,19 @@ export const load: PageServerLoad = async ({ cookies, fetch }) => {
 
 		return {
 			faculties,
+			search,
 			error: null
 		};
-	} catch (error) {
-		if (error instanceof Response && error.status === 302) {
-			throw error;
-		}
 
-		console.error('Error fetching faculties:', error);
+	} catch (error) {
 		return {
 			faculties: [],
+			search,
 			error: error instanceof Error ? error.message : 'Failed to fetch faculties'
 		};
 	}
 };
+
 
 export const actions: Actions = {
 	deleteFaculty: async ({ request, cookies, fetch }) => {

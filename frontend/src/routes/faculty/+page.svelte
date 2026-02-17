@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { GraduationCap, Plus } from 'lucide-svelte';
+	import { GraduationCap, Plus, Search } from 'lucide-svelte';
 	import type { PageData } from './$types';
 	import PageHeader from '$lib/component/PageHeader.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ActionMenu from '$lib/component/ActionMenu.svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
 	interface Props {
@@ -12,7 +14,11 @@
 
 	let { data }: Props = $props();
 
-	let faculties = $state(data.faculties || []);
+	const faculties = $derived(data?.faculties || []);
+	const searchValue = $derived(data?.search || '');
+
+	let timeout: ReturnType<typeof setTimeout>;
+
 	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
 	function showToast(type: 'success' | 'error', message: string) {
@@ -20,27 +26,55 @@
 		setTimeout(() => { toast = null; }, 3000);
 	}
 
+	function handleSearch(event: Event) {
+		const value = (event.target as HTMLInputElement).value;
+
+		clearTimeout(timeout);
+
+		timeout = setTimeout(() => {
+			const url = new URL(page.url);
+
+			if (value.trim()) {
+				url.searchParams.set('search', value);
+			} else {
+				url.searchParams.delete('search');
+			}
+
+			goto(url.toString(), { keepFocus: true, invalidateAll: true });
+		}, 300);
+	}
+
 	async function handleDelete(id: number) {
-		const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
-		if (!token) { showToast('error', 'Not authorized'); return; }
+		const token = document.cookie
+			.split('; ')
+			.find(row => row.startsWith('token='))?.split('=')[1];
+
+		if (!token) { 
+			showToast('error', 'Not authorized'); 
+			return; 
+		}
 
 		const previous = [...faculties];
-		faculties = faculties.filter(f => f.id !== id);
 
 		try {
 			const res = await fetch(`${PUBLIC_API_BASE_URL}/faculty/${id}`, {
 				method: 'DELETE',
-				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+				headers: { 
+					'Authorization': `Bearer ${token}`, 
+					'Content-Type': 'application/json' 
+				}
 			});
+
 			if (!res.ok) {
-				faculties = previous;
-				const errData = await res.json().catch(() => ({ detail: 'Delete failed' }));
-				showToast('error', errData.detail || 'Failed to delete faculty');
+				showToast('error', 'Failed to delete faculty');
 				return;
 			}
+
 			showToast('success', 'Faculty deleted successfully');
+
+			goto(page.url.toString(), { invalidateAll: true });
+
 		} catch (err) {
-			faculties = previous;
 			showToast('error', 'Server error while deleting faculty');
 		}
 	}
@@ -72,7 +106,20 @@
 				</Button>
 			</div>
 
-			{#if faculties && faculties.length > 0}
+			<div class="mb-4 max-w-sm">
+				<div class="relative">
+					<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+					<input
+						type="text"
+						placeholder="Search faculty by name..."
+						value={searchValue}
+						oninput={handleSearch}
+						class="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-black focus:outline-none"
+					/>
+				</div>
+			</div>
+
+			{#if faculties.length > 0}
 				<div class="overflow-x-auto">
 					<table class="min-w-full divide-y divide-gray-200">
 						<thead class="bg-gray-50">
@@ -86,11 +133,20 @@
 						<tbody class="divide-y divide-gray-200 bg-white">
 							{#each faculties as faculty}
 								<tr class="hover:bg-gray-50">
-									<td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">{faculty.name}</td>
-									<td class="px-6 py-4 text-sm text-gray-700">{faculty.department?.name || 'N/A'}</td>
-									<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-700">{faculty.department?.year || '-'}</td>
+									<td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+										{faculty.name}
+									</td>
+									<td class="px-6 py-4 text-sm text-gray-700">
+										{faculty.department?.name || 'N/A'}
+									</td>
+									<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+										{faculty.department?.year || '-'}
+									</td>
 									<td class="px-6 py-4 text-center">
-										<ActionMenu onEdit={() => handleEdit(faculty.id)} onDelete={() => handleDelete(faculty.id)} />
+										<ActionMenu
+											onEdit={() => handleEdit(faculty.id)}
+											onDelete={() => handleDelete(faculty.id)}
+										/>
 									</td>
 								</tr>
 							{/each}
@@ -99,7 +155,13 @@
 				</div>
 			{:else}
 				<div class="py-12 text-center text-gray-500">
-					<p class="mt-4 text-lg font-medium">No faculties found</p>
+					{#if searchValue}
+						<p class="mt-4 text-lg font-medium">
+							No faculty found for "<strong>{searchValue}</strong>"
+						</p>
+					{:else}
+						<p class="mt-4 text-lg font-medium">No faculties found</p>
+					{/if}
 				</div>
 			{/if}
 		</div>
