@@ -10,7 +10,7 @@
 
 	let { form, data }: Props = $props();
 
-	const config: EntityFormConfig = {
+	const config = $derived({
 		title: 'Create Faculty',
 		subtitle: 'Add a new faculty member to the system',
 		fields: [
@@ -32,7 +32,7 @@
 			}
 		],
 		cancelHref: '/faculty'
-	};
+	});
 </script>
 
 <EntityForm {config} {form} />

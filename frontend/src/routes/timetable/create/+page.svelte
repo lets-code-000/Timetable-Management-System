@@ -10,7 +10,7 @@
 
 	let { form, data }: Props = $props();
 
-	const config: EntityFormConfig = {
+	const config = $derived({
 		title: 'Create Timetable',
 		subtitle: 'Add a new timetable for a department',
 		fields: [
@@ -52,7 +52,7 @@
 			}
 		],
 		cancelHref: '/timetable'
-	};
+	});
 </script>
 
 <EntityForm {config} {form} />

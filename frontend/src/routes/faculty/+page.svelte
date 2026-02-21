@@ -14,12 +14,17 @@
 
 	let { data }: Props = $props();
 
+	let faculties = $state([]);
 	const faculties = $derived(data?.faculties || []);
 	const searchValue = $derived(data?.search || '');
 
 	let timeout: ReturnType<typeof setTimeout>;
 
 	let toast = $state<{ type: 'success' | 'error'; message: string } | null>(null);
+
+	$effect(() => {
+		faculties = data.faculties || [];
+	});
 
 	function showToast(type: 'success' | 'error', message: string) {
 		toast = { type, message };

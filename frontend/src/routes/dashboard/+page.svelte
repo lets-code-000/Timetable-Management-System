@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	 import * as Card from "$lib/components/ui/card/index.js";
+	import * as Card from "$lib/components/ui/card/index.js";
 
 	let username = '';
 
@@ -27,6 +27,7 @@
 			username = data.sub; // set username from token
 		}
 	});
+
 	const stats = [
 		{ name: 'Subjects', count: 12, description: 'Total subjects available in the system' },
 		{ name: 'Departments', count: 5, description: 'Total departments in the college' },
@@ -35,6 +36,7 @@
 		{ name: 'Faculty', count: 25, description: 'Total faculty members' }
 	];
 </script>
+
 <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
 	{#each stats as stat}
 		<Card.Root class="border rounded-xl shadow-md hover:shadow-lg transition-all duration-300">

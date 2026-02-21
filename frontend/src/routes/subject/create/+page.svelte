@@ -10,7 +10,7 @@
 
 	let { form, data }: Props = $props();
 
-	const config: EntityFormConfig = {
+	const config = $derived({
 		title: 'Create Subject',
 		subtitle: 'Add a new subject to the system',
 		fields: [
@@ -42,7 +42,7 @@
 			}
 		],
 		cancelHref: '/subject'
-	};
+	});
 </script>
 
 <EntityForm {config} {form} />

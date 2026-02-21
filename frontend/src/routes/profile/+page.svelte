@@ -14,9 +14,17 @@
 	let successMessage = $state('');
 
 	let editForm = $state({
-		username: data.user?.username ?? '',
-		email: data.user?.email ?? '',
-		phone_number: data.user?.phone_number ?? ''
+		username: '',
+		email: '',
+		phone_number: ''
+	});
+
+	$effect(() => {
+		editForm = {
+			username: data.user?.username ?? '',
+			email: data.user?.email ?? '',
+			phone_number: data.user?.phone_number ?? ''
+		};
 	});
 
 	function startEditing() {
