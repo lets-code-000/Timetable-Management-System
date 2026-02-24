@@ -20,7 +20,11 @@ add_timing_middleware(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://frontend-portal-one.vercel.app"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://frontend-portal-one.vercel.app",
+        "https://managehere.netlify.app/",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
