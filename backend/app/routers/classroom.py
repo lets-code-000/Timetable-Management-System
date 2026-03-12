@@ -4,7 +4,6 @@ from app.database import get_db
 from app.models.classroom import Classroom
 from app.models.department import Department
 from app.schemas.classroom import ClassroomCreate, ClassroomRead, ClassroomUpdate,DeleteClassroomResponse
-from app.schemas.utils import DeleteResponse
 from app.crud.deps import get_current_user
 
 router = APIRouter()
