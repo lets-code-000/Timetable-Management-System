@@ -33,8 +33,8 @@ class TimetableSlot(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), server_default=func.now())
     )
 
-    # Relationships
     timetable: "Timetable" = Relationship(back_populates="slots")
     classroom: "Classroom" = Relationship(back_populates="slots")
     subject: "Subject" = Relationship(back_populates="slots")
     faculty: "Faculty" = Relationship(back_populates="slots")
+    
