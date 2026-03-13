@@ -1,4 +1,3 @@
-from typing import Optional
 from datetime import datetime, time
 from sqlmodel import SQLModel
 
@@ -31,12 +30,12 @@ class TimetableSlotUpdate(TimetableSlotBase):
 
 class TimetableSlotRead(TimetableSlotBase):
     id: int
-    created_at: Optional[datetime]
+    created_at: datetime | None
 
-    subject: Optional[SubjectRead] = None
-    faculty: Optional[FacultyRead] = None
-    classroom: Optional[ClassroomRead] = None
-    timetable: Optional[TimetableRead] = None
+    subject: SubjectRead | None = None
+    faculty: FacultyRead | None = None
+    classroom: ClassroomRead | None = None
+    timetable: TimetableRead | None = None
 
     class Config:
         from_attributes = True

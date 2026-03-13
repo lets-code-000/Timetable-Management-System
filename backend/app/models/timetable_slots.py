@@ -1,4 +1,3 @@
-from typing import Optional
 from datetime import datetime, time
 from sqlmodel import SQLModel, Field, Relationship
 
@@ -8,7 +7,7 @@ from app.schemas.utils import DayOfWeek
 class TimetableSlot(SQLModel, table=True):
     __tablename__ = "timetable_slots"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
 
     timetable_id: int = Field(foreign_key="timetable.id")
     classroom_id: int = Field(foreign_key="classroom.id")
