@@ -44,7 +44,6 @@ class TimetableSlotRead(SQLModel):
     end_time: time
     created_at: Optional[datetime]
 
-    # nested objects
     subject: Optional[SubjectRead] = None
     faculty: Optional[FacultyRead] = None
     classroom: Optional[ClassroomRead] = None
