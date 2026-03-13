@@ -29,13 +29,8 @@ class TimetableSlotUpdate(TimetableSlotBase):
     pass
 
 
-class TimetableSlotRead(SQLModel):
+class TimetableSlotRead(TimetableSlotBase):
     id: int
-    timetable_id: int
-
-    day_of_week: DayOfWeek
-    start_time: time
-    end_time: time
     created_at: Optional[datetime]
 
     subject: Optional[SubjectRead] = None
