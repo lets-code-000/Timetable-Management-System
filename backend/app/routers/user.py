@@ -3,7 +3,6 @@ from sqlmodel import Session, func, select
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserOut, UserUpdate, DeleteUserResponse
-from app.schemas.utils import DeleteResponse
 from app.crud.deps import get_current_user
 
 router = APIRouter()

@@ -7,7 +7,7 @@ from app.schemas.timetable import TimetableRead
 from app.schemas.classroom import ClassroomRead
 from app.schemas.subject import SubjectRead
 from app.schemas.faculty import FacultyRead
-from app.models.timetable_slots import DayOfWeek
+from app.schemas.utils import DayOfWeek
 
 
 

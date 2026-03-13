@@ -5,7 +5,6 @@ from app.database import get_db
 from app.models.faculty import Faculty
 from app.models.department import Department
 from app.schemas.faculty import FacultyCreate, FacultyRead, FacultyUpdate, DeleteFacultyResponse
-from app.schemas.utils import DeleteResponse
 from app.crud.deps import get_current_user
 
 router = APIRouter()

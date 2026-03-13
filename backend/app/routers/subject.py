@@ -6,7 +6,6 @@ from app.models.subject import Subject
 from app.models.faculty import Faculty
 from app.models.department import Department
 from app.schemas.subject import SubjectCreate, SubjectRead, SubjectUpdate, DeleteSubjectResponse
-from app.schemas.utils import DeleteResponse
 from app.crud.deps import get_current_user
 
 router = APIRouter()
