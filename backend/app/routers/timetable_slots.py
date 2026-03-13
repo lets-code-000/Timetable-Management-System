@@ -2,15 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List
 
+
 from app.database import get_db
 from app.models.timetable_slots import TimetableSlot
 from app.models.timetable import Timetable
 from app.schemas.timetable_slots import (
-    TimetableSlotCreate,
-    TimetableSlotRead,
-    TimetableSlotUpdate,
-    DeleteTimetableSlotResponse,
-)
+        TimetableSlotCreate,
+        TimetableSlotRead,
+        TimetableSlotUpdate,
+        DeleteTimetableSlotResponse,
+    )
 from app.crud.deps import get_current_user
 
 router = APIRouter()
