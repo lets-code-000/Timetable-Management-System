@@ -1,7 +1,11 @@
 from typing import Optional
-from datetime import time, datetime
+from datetime import datetime, time
 from sqlmodel import SQLModel
 from app.models.timetable_slots import DayOfWeek
+
+from app.schemas.subject import SubjectRead
+from app.schemas.faculty import FacultyRead
+from app.schemas.classroom import ClassroomRead
 
 
 class TimetableSlotBase(SQLModel):
@@ -34,10 +38,16 @@ class TimetableSlotRead(SQLModel):
     classroom_id: int
     subject_id: int
     faculty_id: int
+
     day_of_week: DayOfWeek
     start_time: time
     end_time: time
-    created_at: Optional[datetime] = None
+    created_at: Optional[datetime]
+
+    # nested objects
+    subject: Optional[SubjectRead] = None
+    faculty: Optional[FacultyRead] = None
+    classroom: Optional[ClassroomRead] = None
 
     class Config:
         from_attributes = True

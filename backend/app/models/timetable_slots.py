@@ -2,7 +2,7 @@ from typing import Optional
 from enum import Enum
 from datetime import datetime, time
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, DateTime, func
+from sqlalchemy import Column, DateTime, text
 
 
 class DayOfWeek(str, Enum):
@@ -30,7 +30,10 @@ class TimetableSlot(SQLModel, table=True):
 
     created_at: Optional[datetime] = Field(
         default=None,
-        sa_column=Column(DateTime(timezone=True), server_default=func.now())
+        sa_column=Column(
+        DateTime(timezone=True),
+        server_default=text("TIMEZONE('Asia/Kolkata', NOW())")
+        )
     )
 
     timetable: "Timetable" = Relationship(back_populates="slots")
