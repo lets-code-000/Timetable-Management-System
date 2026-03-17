@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, List
+from app.models.timetable_slots import TimetableSlot
 from enum import IntEnum
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
@@ -41,3 +42,4 @@ class Timetable(SQLModel, table=True):
     college: "College" = Relationship(back_populates="timetables")
     department: "Department" = Relationship(back_populates="timetables")
     class_coordinator: "Faculty" = Relationship(back_populates="timetables")
+    slots: List["TimetableSlot"] = Relationship(back_populates="timetable")
