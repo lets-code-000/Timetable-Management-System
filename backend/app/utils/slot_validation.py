@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from datetime import time
 
 from app.models.timetable_slots import TimetableSlot
+from app.models.timetable import Timetable
 from app.schemas.utils import DayOfWeek
 
 
@@ -11,6 +12,7 @@ def validate_slot_conflicts(
     *,
     faculty_id: int,
     classroom_id: int,
+    department_id: int,
     day_of_week: DayOfWeek,
     start_time: time,
     end_time: time,
@@ -53,4 +55,24 @@ def validate_slot_conflicts(
             status_code=400,
             detail="Faculty is already assigned to another class during this time"
         )
-        
+
+    # Department Conflict
+    department_query = select(TimetableSlot).join(
+        Timetable, Timetable.id == TimetableSlot.timetable_id
+    ).where(
+        Timetable.department_id == department_id,
+        TimetableSlot.day_of_week == day_of_week,
+        TimetableSlot.start_time < end_time,
+        TimetableSlot.end_time > start_time,
+    )
+
+    if exclude_slot_id is not None:
+        department_query = department_query.where(
+            TimetableSlot.id != exclude_slot_id
+        )
+
+    if session.exec(department_query).first():
+        raise HTTPException(
+            status_code=400,
+            detail="Department already has a class during this time"
+    )

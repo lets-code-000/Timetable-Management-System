@@ -36,11 +36,12 @@ def create_timetable_slot(
             detail="Enter a valid time range where start_time is before end_time"
         )
 
-    # Use reusable validation
+    # Validation for classroom, faculty, and department conflicts
     validate_slot_conflicts(
         session,
         faculty_id=slot.faculty_id,
         classroom_id=slot.classroom_id,
+        department_id=timetable.department_id,
         day_of_week=slot.day_of_week,
         start_time=slot.start_time,
         end_time=slot.end_time,
@@ -55,7 +56,7 @@ def create_timetable_slot(
     return db_slot
 
 
-# GET ALL SLOTS
+# GET ALL
 @router.get("/", response_model=List[TimetableSlotRead])
 def get_timetable_slots(
     session: Session = Depends(get_db),
@@ -70,7 +71,7 @@ def get_timetable_slots(
     return session.exec(query).all()
 
 
-# GET SLOT BY ID
+# GET BY ID 
 @router.get("/{slot_id}", response_model=TimetableSlotRead)
 def get_timetable_slot_by_id(
     slot_id: int,
@@ -84,7 +85,7 @@ def get_timetable_slot_by_id(
 
     timetable = session.get(Timetable, db_slot.timetable_id)
 
-    if timetable.college_id != current_user.college_id:
+    if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     return db_slot
@@ -105,7 +106,7 @@ def update_timetable_slot(
 
     timetable = session.get(Timetable, db_slot.timetable_id)
 
-    if timetable.college_id != current_user.college_id:
+    if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Time validation
@@ -115,11 +116,12 @@ def update_timetable_slot(
             detail="Enter a valid time range where start_time is before end_time"
         )
 
-    # Use reusable validation (IMPORTANT: exclude current slot)
+    # Validation for classroom, faculty, and department conflicts (excluding the current slot)
     validate_slot_conflicts(
         session,
         faculty_id=slot.faculty_id,
         classroom_id=slot.classroom_id,
+        department_id=timetable.department_id,
         day_of_week=slot.day_of_week,
         start_time=slot.start_time,
         end_time=slot.end_time,
@@ -151,7 +153,7 @@ def delete_timetable_slot(
 
     timetable = session.get(Timetable, db_slot.timetable_id)
 
-    if timetable.college_id != current_user.college_id:
+    if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     slot_public = TimetableSlotRead.model_validate(db_slot)
@@ -163,4 +165,3 @@ def delete_timetable_slot(
         message="Timetable slot deleted successfully",
         data=slot_public
     )
-    
