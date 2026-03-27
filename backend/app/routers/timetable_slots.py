@@ -16,7 +16,6 @@ from app.crud.deps import get_current_user
 
 router = APIRouter()
 
-
 @router.post("/", response_model=TimetableSlotRead)
 def create_timetable_slot(
     slot: TimetableSlotCreate,
@@ -28,6 +27,28 @@ def create_timetable_slot(
     if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=404, detail="Timetable not found")
 
+    if slot.start_time >= slot.end_time:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter a valid time range where start_time is before end_time"
+        )
+
+    existing_slot = session.exec(
+        select(TimetableSlot).where(
+            TimetableSlot.classroom_id == slot.classroom_id,
+            TimetableSlot.day_of_week == slot.day_of_week,
+            TimetableSlot.start_time < slot.end_time,
+            TimetableSlot.end_time > slot.start_time,
+        )
+    ).first()
+
+    if existing_slot:
+        raise HTTPException(
+            status_code=400,
+            detail="Classroom is already occupied during this time slot"
+        )
+
+    # create slot
     db_slot = TimetableSlot.model_validate(slot)
 
     session.add(db_slot)
