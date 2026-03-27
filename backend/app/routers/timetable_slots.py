@@ -12,6 +12,7 @@ from app.schemas.timetable_slots import (
     DeleteTimetableSlotResponse,
 )
 from app.crud.deps import get_current_user
+from app.utils.slot_validation import validate_slot_conflicts
 
 router = APIRouter()
 
@@ -35,39 +36,16 @@ def create_timetable_slot(
             detail="Enter a valid time range where start_time is before end_time"
         )
 
-    # Classroom conflict
-    classroom_conflict = session.exec(
-        select(TimetableSlot).where(
-            TimetableSlot.classroom_id == slot.classroom_id,
-            TimetableSlot.day_of_week == slot.day_of_week,
-            TimetableSlot.start_time < slot.end_time,
-            TimetableSlot.end_time > slot.start_time,
-        )
-    ).first()
+    # Use reusable validation
+    validate_slot_conflicts(
+        session,
+        faculty_id=slot.faculty_id,
+        classroom_id=slot.classroom_id,
+        day_of_week=slot.day_of_week,
+        start_time=slot.start_time,
+        end_time=slot.end_time,
+    )
 
-    if classroom_conflict:
-        raise HTTPException(
-            status_code=400,
-            detail="Classroom is already occupied during this time slot"
-        )
-
-    # Faculty conflict
-    faculty_conflict = session.exec(
-        select(TimetableSlot).where(
-            TimetableSlot.faculty_id == slot.faculty_id,
-            TimetableSlot.day_of_week == slot.day_of_week,
-            TimetableSlot.start_time < slot.end_time,
-            TimetableSlot.end_time > slot.start_time,
-        )
-    ).first()
-
-    if faculty_conflict:
-        raise HTTPException(
-            status_code=400,
-            detail="Faculty is already assigned to another class during this time"
-        )
-
-    # Create slot
     db_slot = TimetableSlot.model_validate(slot)
 
     session.add(db_slot)
@@ -137,41 +115,18 @@ def update_timetable_slot(
             detail="Enter a valid time range where start_time is before end_time"
         )
 
-    # Classroom conflict
-    classroom_conflict = session.exec(
-        select(TimetableSlot).where(
-            TimetableSlot.classroom_id == slot.classroom_id,
-            TimetableSlot.day_of_week == slot.day_of_week,
-            TimetableSlot.start_time < slot.end_time,
-            TimetableSlot.end_time > slot.start_time,
-            TimetableSlot.id != slot_id,
-        )
-    ).first()
+    # Use reusable validation (IMPORTANT: exclude current slot)
+    validate_slot_conflicts(
+        session,
+        faculty_id=slot.faculty_id,
+        classroom_id=slot.classroom_id,
+        day_of_week=slot.day_of_week,
+        start_time=slot.start_time,
+        end_time=slot.end_time,
+        exclude_slot_id=slot_id,
+    )
 
-    if classroom_conflict:
-        raise HTTPException(
-            status_code=400,
-            detail="Classroom is already occupied during this time slot"
-        )
-
-    # Faculty conflict
-    faculty_conflict = session.exec(
-        select(TimetableSlot).where(
-            TimetableSlot.faculty_id == slot.faculty_id,
-            TimetableSlot.day_of_week == slot.day_of_week,
-            TimetableSlot.start_time < slot.end_time,
-            TimetableSlot.end_time > slot.start_time,
-            TimetableSlot.id != slot_id,
-        )
-    ).first()
-
-    if faculty_conflict:
-        raise HTTPException(
-            status_code=400,
-            detail="Faculty is already assigned to another class during this time"
-        )
-
-    # Apply updates (full update)
+    # Update values
     for field, value in slot.model_dump().items():
         setattr(db_slot, field, value)
 
