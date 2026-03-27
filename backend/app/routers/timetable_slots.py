@@ -2,20 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from typing import List
 
-
 from app.database import get_db
 from app.models.timetable_slots import TimetableSlot
 from app.models.timetable import Timetable
 from app.schemas.timetable_slots import (
-        TimetableSlotCreate,
-        TimetableSlotRead,
-        TimetableSlotUpdate,
-        DeleteTimetableSlotResponse,
-    )
+    TimetableSlotCreate,
+    TimetableSlotRead,
+    TimetableSlotUpdate,
+    DeleteTimetableSlotResponse,
+)
 from app.crud.deps import get_current_user
 
 router = APIRouter()
 
+
+# CREATE SLOT
 @router.post("/", response_model=TimetableSlotRead)
 def create_timetable_slot(
     slot: TimetableSlotCreate,
@@ -27,13 +28,15 @@ def create_timetable_slot(
     if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=404, detail="Timetable not found")
 
+    # Time validation
     if slot.start_time >= slot.end_time:
         raise HTTPException(
             status_code=400,
             detail="Enter a valid time range where start_time is before end_time"
         )
 
-    existing_slot = session.exec(
+    # Classroom conflict
+    classroom_conflict = session.exec(
         select(TimetableSlot).where(
             TimetableSlot.classroom_id == slot.classroom_id,
             TimetableSlot.day_of_week == slot.day_of_week,
@@ -42,13 +45,29 @@ def create_timetable_slot(
         )
     ).first()
 
-    if existing_slot:
+    if classroom_conflict:
         raise HTTPException(
             status_code=400,
             detail="Classroom is already occupied during this time slot"
         )
 
-    # create slot
+    # Faculty conflict
+    faculty_conflict = session.exec(
+        select(TimetableSlot).where(
+            TimetableSlot.faculty_id == slot.faculty_id,
+            TimetableSlot.day_of_week == slot.day_of_week,
+            TimetableSlot.start_time < slot.end_time,
+            TimetableSlot.end_time > slot.start_time,
+        )
+    ).first()
+
+    if faculty_conflict:
+        raise HTTPException(
+            status_code=400,
+            detail="Faculty is already assigned to another class during this time"
+        )
+
+    # Create slot
     db_slot = TimetableSlot.model_validate(slot)
 
     session.add(db_slot)
@@ -58,6 +77,7 @@ def create_timetable_slot(
     return db_slot
 
 
+# GET ALL SLOTS
 @router.get("/", response_model=List[TimetableSlotRead])
 def get_timetable_slots(
     session: Session = Depends(get_db),
@@ -69,11 +89,10 @@ def get_timetable_slots(
         .where(Timetable.college_id == current_user.college_id)
     )
 
-    slots = session.exec(query).all()
-
-    return slots
+    return session.exec(query).all()
 
 
+# GET SLOT BY ID
 @router.get("/{slot_id}", response_model=TimetableSlotRead)
 def get_timetable_slot_by_id(
     slot_id: int,
@@ -93,6 +112,7 @@ def get_timetable_slot_by_id(
     return db_slot
 
 
+# UPDATE SLOT
 @router.put("/{slot_id}", response_model=TimetableSlotRead)
 def update_timetable_slot(
     slot_id: int,
@@ -110,9 +130,49 @@ def update_timetable_slot(
     if timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    slot_data = slot.model_dump(exclude_unset=True)
+    # Time validation
+    if slot.start_time >= slot.end_time:
+        raise HTTPException(
+            status_code=400,
+            detail="Enter a valid time range where start_time is before end_time"
+        )
 
-    for field, value in slot_data.items():
+    # Classroom conflict
+    classroom_conflict = session.exec(
+        select(TimetableSlot).where(
+            TimetableSlot.classroom_id == slot.classroom_id,
+            TimetableSlot.day_of_week == slot.day_of_week,
+            TimetableSlot.start_time < slot.end_time,
+            TimetableSlot.end_time > slot.start_time,
+            TimetableSlot.id != slot_id,
+        )
+    ).first()
+
+    if classroom_conflict:
+        raise HTTPException(
+            status_code=400,
+            detail="Classroom is already occupied during this time slot"
+        )
+
+    # Faculty conflict
+    faculty_conflict = session.exec(
+        select(TimetableSlot).where(
+            TimetableSlot.faculty_id == slot.faculty_id,
+            TimetableSlot.day_of_week == slot.day_of_week,
+            TimetableSlot.start_time < slot.end_time,
+            TimetableSlot.end_time > slot.start_time,
+            TimetableSlot.id != slot_id,
+        )
+    ).first()
+
+    if faculty_conflict:
+        raise HTTPException(
+            status_code=400,
+            detail="Faculty is already assigned to another class during this time"
+        )
+
+    # Apply updates (full update)
+    for field, value in slot.model_dump().items():
         setattr(db_slot, field, value)
 
     session.add(db_slot)
@@ -122,6 +182,7 @@ def update_timetable_slot(
     return db_slot
 
 
+# DELETE SLOT
 @router.delete("/{slot_id}", response_model=DeleteTimetableSlotResponse)
 def delete_timetable_slot(
     slot_id: int,
@@ -147,3 +208,4 @@ def delete_timetable_slot(
         message="Timetable slot deleted successfully",
         data=slot_public
     )
+    
