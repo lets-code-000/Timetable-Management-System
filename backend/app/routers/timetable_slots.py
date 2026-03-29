@@ -12,7 +12,10 @@ from app.schemas.timetable_slots import (
     DeleteTimetableSlotResponse,
 )
 from app.crud.deps import get_current_user
-from app.utils.slot_validation import validate_slot_conflicts
+from app.utils.slot_validation import (
+    validate_slot_conflicts,
+    validate_time_and_duplicates,
+)
 
 router = APIRouter()
 
@@ -29,14 +32,19 @@ def create_timetable_slot(
     if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=404, detail="Timetable not found")
 
-    # Time validation
-    if slot.start_time >= slot.end_time:
-        raise HTTPException(
-            status_code=400,
-            detail="Enter a valid time range where start_time is before end_time"
-        )
+    # Time and Duplicate Validation
+    validate_time_and_duplicates(
+        session,
+        timetable_id=slot.timetable_id,
+        classroom_id=slot.classroom_id,
+        faculty_id=slot.faculty_id,
+        subject_id=slot.subject_id,
+        day_of_week=slot.day_of_week,
+        start_time=slot.start_time,
+        end_time=slot.end_time,
+    )
 
-    # Validation for classroom, faculty, and department conflicts
+    # Conflict Validation
     validate_slot_conflicts(
         session,
         faculty_id=slot.faculty_id,
@@ -109,14 +117,20 @@ def update_timetable_slot(
     if not timetable or timetable.college_id != current_user.college_id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    # Time validation
-    if slot.start_time >= slot.end_time:
-        raise HTTPException(
-            status_code=400,
-            detail="Enter a valid time range where start_time is before end_time"
-        )
+    # Time and Duplicate Validation
+    validate_time_and_duplicates(
+        session,
+        timetable_id=slot.timetable_id,
+        classroom_id=slot.classroom_id,
+        faculty_id=slot.faculty_id,
+        subject_id=slot.subject_id,
+        day_of_week=slot.day_of_week,
+        start_time=slot.start_time,
+        end_time=slot.end_time,
+        exclude_slot_id=slot_id,
+    )
 
-    # Validation for classroom, faculty, and department conflicts (excluding the current slot)
+    # Conflict Validation
     validate_slot_conflicts(
         session,
         faculty_id=slot.faculty_id,
@@ -128,7 +142,6 @@ def update_timetable_slot(
         exclude_slot_id=slot_id,
     )
 
-    # Update values
     for field, value in slot.model_dump().items():
         setattr(db_slot, field, value)
 
