@@ -7,7 +7,6 @@ from app.models.timetable import Timetable
 from app.schemas.utils import DayOfWeek
 
 
-# Time and Duplicate Validation 
 def validate_time_and_duplicates(
     session: Session,
     *,
@@ -24,7 +23,7 @@ def validate_time_and_duplicates(
     if start_time >= end_time:
         raise HTTPException(
             status_code=400,
-            detail="start_time must be before end_time"
+            detail="Start time must be before end time"
         )
 
     # Duplicate check
@@ -43,14 +42,25 @@ def validate_time_and_duplicates(
             TimetableSlot.id != exclude_slot_id
         )
 
-    if session.exec(duplicate_query).first():
+    duplicate_slot = session.exec(duplicate_query).first()
+
+    if duplicate_slot:
         raise HTTPException(
-            status_code=400,
-            detail="Exact duplicate timetable slot already exists"
+            status_code=409,
+            detail=(
+                f"This exact slot already exists for "
+                f"{duplicate_slot.subject.name} with "
+                f"{duplicate_slot.faculty.name} in Room "
+                f"{duplicate_slot.classroom.room_no} "
+                f"from {duplicate_slot.start_time.strftime('%H:%M')} "
+                f"to {duplicate_slot.end_time.strftime('%H:%M')} "
+                f"({day_of_week})"
+            )
         )
 
 
-# Conflict Validation 
+
+# Conflict Validation
 def validate_slot_conflicts(
     session: Session,
     *,
@@ -62,7 +72,9 @@ def validate_slot_conflicts(
     end_time: time,
     exclude_slot_id: int | None = None,
 ):
-    # Classroom Conflict
+
+    
+    # 1. Classroom Conflict
     classroom_query = select(TimetableSlot).where(
         TimetableSlot.classroom_id == classroom_id,
         TimetableSlot.day_of_week == day_of_week,
@@ -75,13 +87,22 @@ def validate_slot_conflicts(
             TimetableSlot.id != exclude_slot_id
         )
 
-    if session.exec(classroom_query).first():
+    classroom_conflict = session.exec(classroom_query).first()
+
+    if classroom_conflict:
         raise HTTPException(
-            status_code=400,
-            detail="Classroom is already occupied during this time slot"
+            status_code=409,
+            detail=(
+                f"Room {classroom_conflict.classroom.room_no} "
+                f"is already occupied by {classroom_conflict.subject.name} "
+                f"handled by {classroom_conflict.faculty.name} "
+                f"from {classroom_conflict.start_time.strftime('%H:%M')} "
+                f"to {classroom_conflict.end_time.strftime('%H:%M')} "
+                f"on {day_of_week}"
+            )
         )
 
-    # Faculty Conflict
+    # 2. Faculty Conflict
     faculty_query = select(TimetableSlot).where(
         TimetableSlot.faculty_id == faculty_id,
         TimetableSlot.day_of_week == day_of_week,
@@ -94,13 +115,22 @@ def validate_slot_conflicts(
             TimetableSlot.id != exclude_slot_id
         )
 
-    if session.exec(faculty_query).first():
+    faculty_conflict = session.exec(faculty_query).first()
+
+    if faculty_conflict:
         raise HTTPException(
-            status_code=400,
-            detail="Faculty is already assigned to another class during this time"
+            status_code=409,
+            detail=(
+                f"{faculty_conflict.faculty.name} is already assigned to "
+                f"{faculty_conflict.subject.name} in Room "
+                f"{faculty_conflict.classroom.room_no} "
+                f"from {faculty_conflict.start_time.strftime('%H:%M')} "
+                f"to {faculty_conflict.end_time.strftime('%H:%M')} "
+                f"on {day_of_week}"
+            )
         )
 
-    # Department Conflict
+    # 3. Department Conflict
     department_query = select(TimetableSlot).join(
         Timetable, Timetable.id == TimetableSlot.timetable_id
     ).where(
@@ -115,8 +145,18 @@ def validate_slot_conflicts(
             TimetableSlot.id != exclude_slot_id
         )
 
-    if session.exec(department_query).first():
+    department_conflict = session.exec(department_query).first()
+
+    if department_conflict:
         raise HTTPException(
-            status_code=400,
-            detail="Department already has a class during this time"
+            status_code=409,
+            detail=(
+                f"Department already has {department_conflict.subject.name} "
+                f"in Room {department_conflict.classroom.room_no} "
+                f"handled by {department_conflict.faculty.name} "
+                f"from {department_conflict.start_time.strftime('%H:%M')} "
+                f"to {department_conflict.end_time.strftime('%H:%M')} "
+                f"on {day_of_week}"
+            )
         )
+        
